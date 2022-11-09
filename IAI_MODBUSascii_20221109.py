@@ -48,9 +48,9 @@ PMCR = '9800' # Position movement command register
 
 #Positioning Data Direct Writing
 PCMD ='9900' #Target position specification register
-tgt_pos_band = '000A'  # Position band 0.01 mm pg 377
-tgt_pos_vel  = '2710'  # Velocity 0.01 mm/s
-tgt_pos_acc  = '001E'  # Acceleration 0.01 G
+# tgt_pos_band = '000A'  # Position band 0.01 mm pg 377
+# tgt_pos_vel  = '2710'  # Velocity 0.01 mm/s
+# tgt_pos_acc  = '001E'  # Acceleration 0.01 G
 
 #Special characters
 CR = '\r' #0x0D # carriage return '\r'
@@ -62,14 +62,15 @@ def connect(portname,baudrate):
     try:
         serial_port = Serial(portname, baudrate=baudrate, timeout=0.5)
     except:
-        self.tkinter.messagebox.showerror(title="Error", message="Cannot Open Serial Port Check connection")
+        pass #tkinter.messagebox.showerror(title="Error", message="Cannot Open Serial Port Check connection")
     return (serial_port)
 def close():
     # Close serial port
     try:
         serial_port.close()
     except:
-        self.tkinter.messagebox.showerror(title="Error", message="Cannot Close Serial Port Check connection")
+        pass#tkinter.messagebox.showerror(title="Error", message="Cannot Close Serial Port Check connection")
+
 class InfiniteTimer():
     """A Timer class that does not stop, unless you want it to."""
 
@@ -142,9 +143,6 @@ class SerialReaderProtocolLine(LineReader):
         self.tk_listener.after(0, self.tk_listener.on_data, line)
 
 
-
-
-
 '''
 def checksum(data)
 Generate Check Sum
@@ -160,12 +158,12 @@ def checksum(data):
     #join every two strings digits  '1' '2' '3' '4 -> '12' '34'
 
     temp_data = [''.join(data[i:i+2]) for i in range(0, len(data), 2)]
-    print('print_tem-data',temp_data)
-    print('checksum',int(temp_data[4],16))
+    #print('print_tem-data',temp_data)
+    #print('checksum',int(temp_data[4],16))
 
     w = [total := total + int(i, 16) for i in temp_data]
     value = -w[-1] & 0xFF # mask off the FF
-    print('checksum1',data, total, w, hex(value), [w[-1]])
+    #print('checksum1',data, total, w, hex(value), [w[-1]])
     return value
 
 
@@ -194,7 +192,7 @@ def send_data(data):
     data.insert(0,':') # ASCII :
     data.append(CR) # start address
     data.append(LF) # start address
-    print(data)
+    #print(data)
     string2send = ""
     for i in range(len(data)):
         #pass
@@ -203,7 +201,7 @@ def send_data(data):
 #       string2send = string2send +"\\x" + byteformat
        string2send = string2send + data[i].upper()
 #        string2send =":0106980000055C\r\n"
-    print('send_data',string2send)
+    #print('send_data',string2send)
     try:
         #print(string2send.decode('string-escape'))
         for i in data:
@@ -212,8 +210,9 @@ def send_data(data):
 
     except:
         #pass
-        print("error")
+        #print("error")
         #raise HerkulexError("could not communicate with motors")
+        messagebox.showerror("Error","data cannot be send")
 
 def servo_On():
     """ servo_On command
@@ -317,10 +316,10 @@ def move2Pos(tgt_pos):
     print(data)
     send_data(data)
 
-def move2PoswifSpeed(tgt_pos):
-    """ servo_On command
+def move2PoswifSpeed(tgt_pos,tgt_pos_band,tgt_pos_vel,tgt_pos_acc):
+    """ move2PoswifSpeed command
            Args:
-               value : the change value in string
+               move2PoswifSpeed(tgt_pos,tgt_pos_band,tgt_pos_vel,tgt_pos_acc) : the change value in string
 
                Slave address [H]   2
                Function code [H]   2
@@ -375,25 +374,45 @@ def move2PoswifSpeed(tgt_pos):
     data.append(tgt_pos_acc[1])
     data.append(tgt_pos_acc[2])
     data.append(tgt_pos_acc[3])
-    print(f' before {data} length {len(data)}')
+    #print(f' before {data} length {len(data)}')
     result = checksum(data)
     temp = f'{result:x}'  # remove the x
-    # print(temp,temp[0])
-    data.append(temp[0])
-    data.append(temp[1])
-    print(data)
+    #print(temp,temp[0],len(temp))
+    # data.append(temp[0])
+    # data.append(temp[1])
+    if (len(temp)>=2):
+        data.append(temp[0])
+        data.append(temp[1])
+    else:
+        data.append('0')
+        data.append(temp[0])
+    #print(data)
     send_data(data)
 
 def ALRS():
+    """ ALRS command
+               Args:
+                   void  : the change value in string
+
+                   Slave address [H]   2
+                   Function code [H]   2
+                   Start address [H]   4
+                   Number of registers [H]  4
+                   Number of bytes [H]      2
+                   Changed data 1 [H]       4
+                   Changed data 2 [H]       4
+                   Changed data 3 [H]       4
+
+           """
     data = []
     data.append(SLAVE_ADDRESS[0])
     data.append(SLAVE_ADDRESS[1])
-    data.append(FORCE_SINGLE_COIL[0])
-    data.append(FORCE_SINGLE_COIL[1])
-    data.append(Alarm_reset_H[0])
-    data.append(Alarm_reset_L[1])
-    data.append(SON_L[0])
-    data.append(SON_L[1])
+    data.append(FORCE_SINGLE_COIL[0]) # 0
+    data.append(FORCE_SINGLE_COIL[1]) # 5
+    data.append(Alarm_reset_H[0])     # 0
+    data.append(Alarm_reset_L[1])     # 4
+    data.append(SON_L[0])             # 0
+    data.append(SON_L[1])             # 7
     data.append('F')
     data.append('F')
     data.append('0')
