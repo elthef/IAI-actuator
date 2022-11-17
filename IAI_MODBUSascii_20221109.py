@@ -51,6 +51,8 @@ PCMD ='9900' #Target position specification register
 # tgt_pos_band = '000A'  # Position band 0.01 mm pg 377
 # tgt_pos_vel  = '2710'  # Velocity 0.01 mm/s
 # tgt_pos_acc  = '001E'  # Acceleration 0.01 G
+# PNOW
+CPM = '9000'
 
 #Special characters
 CR = '\r' #0x0D # carriage return '\r'
@@ -64,6 +66,7 @@ def connect(portname,baudrate):
     except:
         pass #tkinter.messagebox.showerror(title="Error", message="Cannot Open Serial Port Check connection")
     return (serial_port)
+
 def close():
     # Close serial port
     try:
@@ -119,12 +122,15 @@ class SerialReaderProtocolRaw(Protocol):
         """Called when reader thread is started"""
         if self.tk_listener is None:
             raise Exception("tk_listener must be set before connecting to the socket!")
-        print("Connected, ready to receive data...")
+        print("Connected raw, ready to receive data...")
 
     def data_received(self, data):
         """Called with snippets received from the serial port"""
-        self.tk_listener.after(0, self.tk_listener.on_data, data)
-
+        try:
+            self.tk_listener.after(0, self.tk_listener.on_data, data.decode())
+        except:
+            pass
+        #print("data received ",data)
 
 class SerialReaderProtocolLine(LineReader):
     tk_listener = None
@@ -210,9 +216,9 @@ def send_data(data):
 
     except:
         #pass
-        #print("error")
+        print("send error")
         #raise HerkulexError("could not communicate with motors")
-        messagebox.showerror("Error","data cannot be send")
+        #messagebox.showerror("Error","data cannot be send")
 
 def servo_On():
     """ servo_On command
@@ -427,6 +433,57 @@ def ALRS():
     # print(data)
     send_data(data)
 
+def PNOW():
+    # data = CurrentPos
+    # for i in data:
+    #     serial_port.write(bytearray(i, 'ascii'))
+
+    """ PNOW command
+    Read Current Postion Now
+    CurrentPos =":01 03 9000 0002 6A\r\n"
+                   Args:
+                       void  : the change value in string
+
+                       Slave address [H]   2
+                       Function code [H]   2
+                       Start address [H]   4
+                       Number of registers [H]  4
+                       Number of bytes [H]      2
+                       Changed data 1 [H]       4
+                       Changed data 2 [H]       4
+                       Changed data 3 [H]       4
+
+               """
+    # data = []
+    # data.append(SLAVE_ADDRESS[0])
+    # data.append(SLAVE_ADDRESS[1])
+    # data.append(READ_HOLDING_REGISTERS[0])  # 0
+    # data.append(READ_HOLDING_REGISTERS[1])  # 3
+    # data.append(CPM[0])  # 9
+    # data.append(CPM[1])  # 0
+    # data.append(CPM[2])  # 0
+    # data.append(CPM[3])  # 0
+    # data.append('0')  # 0
+    # data.append('0')  # 7
+    # data.append('0')
+    # data.append('2')
+    #
+    # #print(f' before {data}')
+    # result = checksum(data)
+    # temp = f'{result:x}'  # remove the x
+    # # print(temp,temp[0])
+    # if (len(temp) >= 2):
+    #     data.append(temp[0])
+    #     data.append(temp[1])
+    # else:
+    #     data.append('0')
+    #     data.append(temp[0])
+    # #print(data)
+    # send_data(data)
+
+    data = CurrentPos
+    for i in data:
+         serial_port.write(bytearray(i, 'ascii'))
 # global serial_port
 # serial_port = None
 # serial_port = Serial("COM4", baudrate=38400, timeout=0.5)
